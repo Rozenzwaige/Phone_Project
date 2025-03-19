@@ -6,6 +6,19 @@
 </head>
 <body>
     <h2>ברוך הבא! אנא התחבר עם גוגל</h2>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-danger">
+                <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endwith %}
+    
     <a href="{{ url_for('login_google') }}">התחבר עם Google</a>
 </body>
 </html>
