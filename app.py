@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, session, render_template
+from flask import Flask, redirect, url_for, session, render_template, flash
 from authlib.integrations.flask_client import OAuth
 import os
 
@@ -26,6 +26,9 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
+# רשימה של כתובת אימיילים מורשים
+AUTHORIZED_EMAILS = ['nroznim@gmail.com', 'naamakunik@gmail.com']
+
 @app.route('/')
 def login():
     return render_template('login.html')
@@ -40,7 +43,15 @@ def authorize():
     token = google.authorize_access_token()
     if not token:
         return redirect(url_for('login'))  # במקרה של כשלון
+    
     user_info = google.get('userinfo').json()
+    user_email = user_info.get('email')
+    
+    # בדוק אם האימייל של המשתמש נמצא ברשימה המורשית
+    if user_email not in AUTHORIZED_EMAILS:
+        flash('הכניסה לא מורשית עבור חשבון זה', 'danger')
+        return redirect(url_for('login'))
+    
     session['user'] = user_info
     return redirect(url_for('welcome'))
 
