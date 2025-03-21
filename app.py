@@ -1,24 +1,16 @@
 from flask import Flask, redirect, url_for, session, render_template, flash
 from authlib.integrations.flask_client import OAuth
-import os
+from config import Config
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "supersecretkey")  # עדיף משתנה סביבה
-
-# קריאת GOOGLE_CLIENT_SECRET מתוך הקובץ ב-Render או ממשתנה סביבה
-secret_file_path = os.getenv("SECRET_FILE")
-if secret_file_path and os.path.exists(secret_file_path):
-    with open(secret_file_path, "r") as file:
-        GOOGLE_CLIENT_SECRET = file.read().strip()
-else:
-    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")  # גיבוי ממשתנה סביבה
+app.config.from_object(Config)
 
 # הגדרת Google OAuth
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
-    client_id=os.getenv("GOOGLE_CLIENT_ID"),
-    client_secret=GOOGLE_CLIENT_SECRET,
+    client_id=app.config["GOOGLE_CLIENT_ID"],
+    client_secret=app.config["GOOGLE_CLIENT_SECRET"],
     access_token_url='https://oauth2.googleapis.com/token',
     authorize_url='https://accounts.google.com/o/oauth2/auth',
     api_base_url='https://www.googleapis.com/oauth2/v1/',
@@ -26,8 +18,6 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# רשימה של כתובת אימיילים מורשים
-AUTHORIZED_EMAILS = ['nroznim@gmail.com', 'naamakunik@gmail.com']
 
 @app.route('/')
 def login():
