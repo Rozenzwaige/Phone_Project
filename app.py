@@ -18,7 +18,6 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-
 @app.route('/')
 def login():
     return render_template('login.html')
@@ -37,8 +36,8 @@ def authorize():
     user_info = google.get('userinfo').json()
     user_email = user_info.get('email')
     
-    # בדוק אם האימייל של המשתמש נמצא ברשימה המורשית
-    if user_email not in AUTHORIZED_EMAILS:
+    # בדיקת הרשאה
+    if user_email not in app.config["AUTHORIZED_EMAILS"]:
         flash('הכניסה לא מורשית עבור חשבון זה', 'danger')
         return redirect(url_for('login'))
     
