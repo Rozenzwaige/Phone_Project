@@ -34,6 +34,7 @@ def login_google():
 @app.route('/authorize')
 def authorize():
     try:
+        app.logger.info(f"Request args: {dict(request.args)}")
         token = google.authorize_access_token()
         app.logger.info(f"Token received: {token}")
 
