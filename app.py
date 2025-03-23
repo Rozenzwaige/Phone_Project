@@ -33,20 +33,28 @@ def login_google():
 
 @app.route('/authorize')
 def authorize():
-    token = google.authorize_access_token()
-    if not token:
-        return redirect(url_for('login'))  # במקרה של כשלון
+    try:
+        token = google.authorize_access_token()
+        app.logger.info(f"Token received: {token}")  # בדיקה אם קיבלנו טוקן
+        if not token:
+            app.logger.error("Token not received!")
+            return redirect(url_for('login'))
+        
+        user_info = google.get('userinfo').json()
+        app.logger.info(f"User Info: {user_info}")  # הצגת המידע שהתקבל
+        
+        user_email = user_info.get('email')
+        
+        if user_email not in AUTHORIZED_EMAILS:
+            flash('הכניסה לא מורשית עבור חשבון זה', 'danger')
+            return redirect(url_for('login'))
+        
+        session['user'] = user_info
+        return redirect(url_for('welcome'))
     
-    user_info = google.get('userinfo').json()
-    user_email = user_info.get('email')
-    
-    # בדיקת הרשאה
-    if user_email not in app.config["AUTHORIZED_EMAILS"]:
-        flash('הכניסה לא מורשית עבור חשבון זה', 'danger')
-        return redirect(url_for('login'))
-    
-    session['user'] = user_info
-    return redirect(url_for('welcome'))
+    except Exception as e:
+        app.logger.error(f"Error during authorization: {e}")
+        return "Authorization failed", 500
 
 @app.route('/welcome')
 def welcome():
