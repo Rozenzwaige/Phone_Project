@@ -4,6 +4,10 @@ from config import Config
 
 app = Flask(__name__)
 app.config.from_object(Config)
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+app.logger.setLevel(logging.DEBUG)
 
 # הגדרת Google OAuth
 oauth = OAuth(app)
