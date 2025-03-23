@@ -35,26 +35,31 @@ def login_google():
 def authorize():
     try:
         token = google.authorize_access_token()
-        app.logger.info(f"Token received: {token}")  # בדיקה אם קיבלנו טוקן
+        app.logger.info(f"Token received: {token}")
+
         if not token:
-            app.logger.error("Token not received!")
-            return redirect(url_for('login'))
-        
+            app.logger.error("No token received!")
+            return "No token received", 401
+
         user_info = google.get('userinfo').json()
-        app.logger.info(f"User Info: {user_info}")  # הצגת המידע שהתקבל
-        
+        app.logger.info(f"User Info: {user_info}")
+
         user_email = user_info.get('email')
-        
+        if not user_email:
+            app.logger.error("Failed to fetch user email")
+            return "Failed to fetch user email", 401
+
         if user_email not in AUTHORIZED_EMAILS:
+            app.logger.warning(f"Unauthorized login attempt: {user_email}")
             flash('הכניסה לא מורשית עבור חשבון זה', 'danger')
             return redirect(url_for('login'))
-        
+
         session['user'] = user_info
         return redirect(url_for('welcome'))
-    
+
     except Exception as e:
-        app.logger.error(f"Error during authorization: {e}")
-        return "Authorization failed", 500
+        app.logger.error(f"Authorization Error: {str(e)}")
+        return f"Authorization failed: {str(e)}", 500
 
 @app.route('/welcome')
 def welcome():
