@@ -14,3 +14,8 @@ class Config:
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     
     AUTHORIZED_EMAILS = {"nroznim@gmail.com", "another_email@gmail.com"}
+
+    # הדפסת הערכים לבדיקת טעינה נכונה (למחוק ב-production)
+    print(f"SECRET_KEY: {SECRET_KEY}")
+    print(f"GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}")
+    print(f"GOOGLE_CLIENT_SECRET: {GOOGLE_CLIENT_SECRET}")  # אל תדפיס ב-production
