@@ -16,6 +16,7 @@ class Config:
     AUTHORIZED_EMAILS = {"nroznim@gmail.com", "naamakunik@gmail.com"}
 
     # הדפסת הערכים לבדיקת טעינה נכונה (למחוק ב-production)
-    print(f"SECRET_KEY: {SECRET_KEY}")
-    print(f"GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}")
-    print(f"GOOGLE_CLIENT_SECRET: {GOOGLE_CLIENT_SECRET}")  # אל תדפיס ב-production
+    if os.getenv("FLASK_ENV") == "development":
+        print(f"SECRET_KEY: {SECRET_KEY}")
+        print(f"GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}")
+        print(f"GOOGLE_CLIENT_SECRET: {GOOGLE_CLIENT_SECRET}")  # אל תדפיס ב-production
