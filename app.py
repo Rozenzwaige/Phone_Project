@@ -1,10 +1,10 @@
 from flask import Flask, redirect, url_for, session, render_template, flash
 from authlib.integrations.flask_client import OAuth
 from config import Config
+import logging
 
 app = Flask(__name__)
 app.config.from_object(Config)
-import logging
 
 logging.basicConfig(level=logging.DEBUG)
 app.logger.setLevel(logging.DEBUG)
@@ -50,7 +50,7 @@ def authorize():
             app.logger.error("Failed to fetch user email")
             return "Failed to fetch user email", 401
 
-        if user_email not in AUTHORIZED_EMAILS:
+        if user_email not in app.config['AUTHORIZED_EMAILS']:
             app.logger.warning(f"Unauthorized login attempt: {user_email}")
             flash('הכניסה לא מורשית עבור חשבון זה', 'danger')
             return redirect(url_for('login'))
