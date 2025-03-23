@@ -13,7 +13,7 @@ class Config:
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     
-    AUTHORIZED_EMAILS = {"nroznim@gmail.com", "another_email@gmail.com"}
+    AUTHORIZED_EMAILS = {"nroznim@gmail.com", "naamakunik@gmail.com"}
 
     # הדפסת הערכים לבדיקת טעינה נכונה (למחוק ב-production)
     print(f"SECRET_KEY: {SECRET_KEY}")
