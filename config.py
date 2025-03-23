@@ -13,4 +13,4 @@ class Config:
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     
-    AUTHORIZED_EMAILS = ['nroznim@gmail.com', 'naamakunik@gmail.com']
+    AUTHORIZED_EMAILS = {"nroznim@gmail.com", "another_email@gmail.com"}
