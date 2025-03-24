@@ -19,12 +19,10 @@ google = oauth.register(
     authorize_url='https://accounts.google.com/o/oauth2/auth',
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
-    jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
     client_kwargs={
-    'scope': 'openid email profile',
-    'prompt': 'consent'
-}
-server_metadata_url="https://accounts.google.com/.well-known/openid-configuration"
+        'scope': 'openid email profile'
+    },
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration"
 )
 
 @app.route('/')
