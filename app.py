@@ -6,6 +6,7 @@ import logging
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# הגדרת לוגים
 logging.basicConfig(level=logging.DEBUG)
 app.logger.setLevel(logging.DEBUG)
 
@@ -15,13 +16,7 @@ google = oauth.register(
     name='google',
     client_id=app.config["GOOGLE_CLIENT_ID"],
     client_secret=app.config["GOOGLE_CLIENT_SECRET"],
-    access_token_url='https://oauth2.googleapis.com/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
-    userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
-    client_kwargs={
-        'scope': 'openid email profile'
-    },
+    client_kwargs={'scope': 'openid email profile'},
     server_metadata_url="https://accounts.google.com/.well-known/openid-configuration"
 )
 
@@ -31,7 +26,8 @@ def login():
 
 @app.route('/login/google')
 def login_google():
-    redirect_uri = url_for('authorize', _external=True)  # לוודא שזה נכון ב-Google Cloud
+    redirect_uri = url_for('authorize', _external=True)
+    app.logger.info(f"Redirecting to Google OAuth: {redirect_uri}")
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/authorize')
@@ -43,7 +39,7 @@ def authorize():
 
         if not token:
             app.logger.error("No token received!")
-            return "No token received", 401
+            return "Authorization failed: missing_token", 401
 
         user_info = google.get('userinfo').json()
         app.logger.info(f"User Info: {user_info}")
@@ -51,7 +47,7 @@ def authorize():
         user_email = user_info.get('email')
         if not user_email:
             app.logger.error("Failed to fetch user email")
-            return "Failed to fetch user email", 401
+            return "Authorization failed: missing_email", 401
 
         if user_email not in app.config['AUTHORIZED_EMAILS']:
             app.logger.warning(f"Unauthorized login attempt: {user_email}")
