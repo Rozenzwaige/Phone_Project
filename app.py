@@ -56,6 +56,10 @@ def authorize():
             session.clear()  # מחיקת הסשן במקרה של כשל
             return "No token received", 401
 
+        # שמירת ה-token ב-session כדי שנוכל להשתמש בו אחר כך
+        session['token'] = token
+        app.logger.info(f"Token stored in session: {session['token']}")
+
         user_info = google.get('userinfo').json()
         app.logger.info(f"User Info: {user_info}")
 
@@ -86,6 +90,7 @@ def welcome():
 @app.route('/logout')
 def logout():
     session.pop('user', None)
+    session.pop('token', None)  # מחיקת ה-token מה-session בעת יציאה
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
