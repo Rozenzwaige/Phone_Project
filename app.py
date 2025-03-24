@@ -6,6 +6,10 @@ import logging
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# הדפסת הערכים של ה-client_id ו-client_secret
+print(f"GOOGLE_CLIENT_ID: {app.config['GOOGLE_CLIENT_ID']}")
+print(f"GOOGLE_CLIENT_SECRET: {app.config['GOOGLE_CLIENT_SECRET']}")  # אל תדפיס ב-production
+
 logging.basicConfig(level=logging.DEBUG)
 app.logger.setLevel(logging.DEBUG)
 
