@@ -6,9 +6,12 @@ import logging
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# הגדרת לוגים
 logging.basicConfig(level=logging.DEBUG)
 app.logger.setLevel(logging.DEBUG)
+
+# הדפסת משתנים כדי לוודא שהם נטענים נכון
+print("GOOGLE_CLIENT_ID:", app.config["GOOGLE_CLIENT_ID"])
+print("GOOGLE_CLIENT_SECRET:", app.config["GOOGLE_CLIENT_SECRET"])
 
 # הגדרת Google OAuth
 oauth = OAuth(app)
@@ -16,7 +19,14 @@ google = oauth.register(
     name='google',
     client_id=app.config["GOOGLE_CLIENT_ID"],
     client_secret=app.config["GOOGLE_CLIENT_SECRET"],
-    client_kwargs={'scope': 'openid email profile'},
+    access_token_url='https://oauth2.googleapis.com/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
+    client_kwargs={
+        'scope': 'openid email profile',
+        'prompt': 'consent'  # מבטיח ש-Google יבקש שוב אישור אם יש בעיות
+    },
     server_metadata_url="https://accounts.google.com/.well-known/openid-configuration"
 )
 
@@ -33,13 +43,14 @@ def login_google():
 @app.route('/authorize')
 def authorize():
     try:
-        app.logger.info(f"Request args: {dict(request.args)}")
+        app.logger.info(f"Request args: {dict(request.args)}")  # הצגת הפרמטרים שהתקבלו
         token = google.authorize_access_token()
         app.logger.info(f"Token received: {token}")
 
         if not token:
             app.logger.error("No token received!")
-            return "Authorization failed: missing_token", 401
+            session.clear()  # מחיקת הסשן במקרה של כשל
+            return "No token received", 401
 
         user_info = google.get('userinfo').json()
         app.logger.info(f"User Info: {user_info}")
@@ -47,7 +58,7 @@ def authorize():
         user_email = user_info.get('email')
         if not user_email:
             app.logger.error("Failed to fetch user email")
-            return "Authorization failed: missing_email", 401
+            return "Failed to fetch user email", 401
 
         if user_email not in app.config['AUTHORIZED_EMAILS']:
             app.logger.warning(f"Unauthorized login attempt: {user_email}")
@@ -56,9 +67,10 @@ def authorize():
 
         session['user'] = user_info
         return redirect(url_for('welcome'))
-
+    
     except Exception as e:
         app.logger.error(f"Authorization Error: {str(e)}")
+        session.clear()  # ניקוי סשן למניעת שגיאות חוזרות
         return f"Authorization failed: {str(e)}", 500
 
 @app.route('/welcome')
