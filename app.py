@@ -1,97 +1,77 @@
-from flask import Flask, redirect, url_for, session, render_template, flash, request
-from authlib.integrations.flask_client import OAuth
-from config import Config
-import logging
+from flask import Flask, render_template, redirect, url_for, request, session, flash
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config['SECRET_KEY'] = 'supersecretkey'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+db = SQLAlchemy(app)
 
-# הדפסת הערכים של ה-client_id ו-client_secret
-print(f"GOOGLE_CLIENT_ID: {app.config['GOOGLE_CLIENT_ID']}")
-print(f"GOOGLE_CLIENT_SECRET: {app.config['GOOGLE_CLIENT_SECRET']}")  # אל תדפיס ב-production
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(150), nullable=False)
+    approved = db.Column(db.Boolean, default=False)
 
-logging.basicConfig(level=logging.DEBUG)
-app.logger.setLevel(logging.DEBUG)
-
-# הדפסת משתנים כדי לוודא שהם נטענים נכון
-print("GOOGLE_CLIENT_ID:", app.config["GOOGLE_CLIENT_ID"])
-print("GOOGLE_CLIENT_SECRET:", app.config["GOOGLE_CLIENT_SECRET"])
-
-# הגדרת Google OAuth
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=app.config["GOOGLE_CLIENT_ID"],
-    client_secret=app.config["GOOGLE_CLIENT_SECRET"],
-    access_token_url='https://oauth2.googleapis.com/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
-    userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
-    client_kwargs={
-        'scope': 'openid email profile',
-        'prompt': 'consent'  # מבטיח ש-Google יבקש שוב אישור אם יש בעיות
-    },
-    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration"
-)
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 @app.route('/')
+def home():
+    return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
+            if user.approved:
+                session['user_id'] = user.id
+                return redirect(url_for('dashboard'))
+            else:
+                flash('החשבון ממתין לאישור מנהל.', 'warning')
+        else:
+            flash('שם משתמש או סיסמה שגויים.', 'danger')
     return render_template('login.html')
 
-@app.route('/login/google')
-def login_google():
-    redirect_uri = url_for('authorize', _external=True)
-    app.logger.info(f"Redirecting to Google OAuth: {redirect_uri}")
-    return google.authorize_redirect(redirect_uri)
-
-@app.route('/authorize')
-def authorize():
-    try:
-        app.logger.info(f"Request args: {dict(request.args)}")  # הצגת הפרמטרים שהתקבלו
-        token = google.authorize_access_token()
-        app.logger.info(f"Token received: {token}")
-
-        if not token:
-            app.logger.error("No token received!")
-            session.clear()  # מחיקת הסשן במקרה של כשל
-            return "No token received", 401
-
-        # שמירת ה-token ב-session כדי שנוכל להשתמש בו אחר כך
-        session['token'] = token
-        app.logger.info(f"Token stored in session: {session['token']}")
-
-        user_info = google.get('userinfo').json()
-        app.logger.info(f"User Info: {user_info}")
-
-        user_email = user_info.get('email')
-        if not user_email:
-            app.logger.error("Failed to fetch user email")
-            return "Failed to fetch user email", 401
-
-        if user_email not in app.config['AUTHORIZED_EMAILS']:
-            app.logger.warning(f"Unauthorized login attempt: {user_email}")
-            flash('הכניסה לא מורשית עבור חשבון זה', 'danger')
-            return redirect(url_for('login'))
-
-        session['user'] = user_info
-        return redirect(url_for('welcome'))
-    
-    except Exception as e:
-        app.logger.error(f"Authorization Error: {str(e)}")
-        session.clear()  # ניקוי סשן למניעת שגיאות חוזרות
-        return f"Authorization failed: {str(e)}", 500
-
-@app.route('/welcome')
-def welcome():
-    if 'user' not in session:
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        hashed_password = generate_password_hash(password, method='sha256')
+        user = User(email=email, password=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+        flash('הרשמה הושלמה! יש להמתין לאישור מנהל.', 'success')
         return redirect(url_for('login'))
-    return render_template('welcome.html', email=session['user']['email'])
+    return render_template('register.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('dashboard.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
-    session.pop('token', None)  # מחיקת ה-token מה-session בעת יציאה
+    session.pop('user_id', None)
     return redirect(url_for('login'))
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'POST':
+        user_id = request.form['user_id']
+        user = User.query.get(user_id)
+        if user:
+            user.approved = True
+            db.session.commit()
+            flash(f'משתמש {user.email} אושר!', 'success')
+    users = User.query.filter_by(approved=False).all()
+    return render_template('admin.html', users=users)
 
 if __name__ == '__main__':
     app.run(debug=True)
