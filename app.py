@@ -1,27 +1,20 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
-from config import Config
 
-db = SQLAlchemy()
-bcrypt = Bcrypt()
-login_manager = LoginManager()
-login_manager.login_view = "login"
+# יצירת מופע Flask
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def create_app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
+db = SQLAlchemy(app)
 
-    db.init_app(app)
-    bcrypt.init_app(app)
-    login_manager.init_app(app)
+# ייבוא המודלים כדי לוודא שהם נטענים
+from models import User
 
-    from routes import auth
-    app.register_blueprint(auth)
+# יצירת מסד הנתונים באופן אוטומטי בעת עליית האפליקציה
+with app.app_context():
+    db.create_all()
+    print("Database initialized successfully!")
 
-    return app
-
-if __name__ == "__main__":
-    app = create_app()
+if __name__ == '__main__':
     app.run(debug=True)
