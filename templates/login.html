@@ -5,9 +5,9 @@
     <h2>Login</h2>
     <form method="POST">
         {{ form.hidden_tag() }}
-        <p>{{ form.email.label }} {{ form.email }}</p>
-        <p>{{ form.password.label }} {{ form.password }}</p>
-        <p>{{ form.submit }}</p>
+        <p>{{ form.email.label }} {{ form.email() }}</p>
+        <p>{{ form.password.label }} {{ form.password() }}</p>
+        <p>{{ form.submit() }}</p>
     </form>
     <p>New user? <a href="{{ url_for('auth.register') }}">Register here</a></p>
 {% endblock %}
