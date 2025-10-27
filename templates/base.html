@@ -1,22 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My App{% endblock %}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}My App{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    nav a { margin-inline: .5rem; }
+    .danger { color: #b00020; }
+    .warning { color: #a36a00; }
+    .info { color: #00529b; }
+    .success { color: #1b5e20; }
+  </style>
 </head>
 <body>
-    <nav>
-        <a href="{{ url_for('login') }}">Login</a>
-        <a href="{{ url_for('register') }}">Register</a>
-    </nav>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <p class="{{ category }}">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
+  <nav>
+    <a href="{{ url_for('login') }}">Login</a>
+    {% if current_user.is_authenticated %}
+      | <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      | <a href="{{ url_for('logout') }}">Logout</a>
+    {% endif %}
+  </nav>
+
+  <!-- הודעות פלאש (מוצגות פעם אחת בלבד בכל עמוד) -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul>
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
 </body>
 </html>
