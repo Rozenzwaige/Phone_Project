@@ -4,33 +4,20 @@
 {% block content %}
   <h2>Login</h2>
 
-  {# הודעות פלאש #}
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <ul>
-        {% for category, message in messages %}
-          <li class="flash {{ category }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
-
   <form method="POST" action="{{ url_for('login') }}">
-    {{ form.hidden_tag() }}  {# כולל CSRF #}
-
-    {# שמירת הפניה אחרי התחברות #}
+    <!-- שמירת יעד החזרה אחרי התחברות -->
     <input type="hidden" name="next" value="{{ next_url or request.args.get('next', url_for('dashboard')) }}">
 
     <p>
-      {{ form.email.label }}
-      {{ form.email(required=True, autocomplete="username") }}
+      <label for="email">אימייל</label><br>
+      <input id="email" name="email" type="email" required autocomplete="username">
     </p>
-    <p>
-      {{ form.password.label }}
-      {{ form.password(required=True, autocomplete="current-password") }}
-    </p>
-    <p>{{ form.submit() }}</p>
-  </form>
 
-  <p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
+    <p>
+      <label for="password">סיסמה</label><br>
+      <input id="password" name="password" type="password" required autocomplete="current-password">
+    </p>
+
+    <p><button type="submit">התחבר/י</button></p>
+  </form>
 {% endblock %}
