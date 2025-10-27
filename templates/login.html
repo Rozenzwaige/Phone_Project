@@ -2,12 +2,35 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-    <h2>Login</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <p>{{ form.email.label }} {{ form.email() }}</p>
-        <p>{{ form.password.label }} {{ form.password() }}</p>
-        <p>{{ form.submit() }}</p>
-    </form>
-    <p>New user? <a href="{{ url_for('auth.register') }}">Register here</a></p>
+  <h2>Login</h2>
+
+  {# הודעות פלאש #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul>
+        {% for category, message in messages %}
+          <li class="flash {{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('login') }}">
+    {{ form.hidden_tag() }}  {# כולל CSRF #}
+
+    {# שמירת הפניה אחרי התחברות #}
+    <input type="hidden" name="next" value="{{ next_url or request.args.get('next', url_for('dashboard')) }}">
+
+    <p>
+      {{ form.email.label }}
+      {{ form.email(required=True, autocomplete="username") }}
+    </p>
+    <p>
+      {{ form.password.label }}
+      {{ form.password(required=True, autocomplete="current-password") }}
+    </p>
+    <p>{{ form.submit() }}</p>
+  </form>
+
+  <p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
 {% endblock %}
