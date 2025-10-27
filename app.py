@@ -6,9 +6,16 @@ from email.mime.text import MIMEText
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_login import (
-    LoginManager, UserMixin, login_user, login_required,
-    logout_user, current_user
+from flask import Flask
+from flask_login import LoginManager
+import config
+from models import EnvUser  # המחלקה הפשוטה למצב בלי DB
+
+app = Flask(__name__)
+app.config.from_object("config.Config")
+
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -40,7 +47,12 @@ class User(db.Model, UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    rec = config.load_user_record(user_id, app.config.get("USERS_JSON"))
+    if rec:
+        return EnvUser(rec["email"], active=rec.get("active", True))
+    return None
+
+import routes
 
 
 # === דפים ===
