@@ -47,7 +47,7 @@ def login():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", email=current_user.email)
+    return render_template("home.html", email=current_user.email)
 
 
 @app.route("/logout")
