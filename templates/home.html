@@ -1,13 +1,14 @@
-<!DOCTYPE html>
-<html lang="he">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דף הבית</title>
-</head>
-<body>
-    <h1>ברוכים הבאים!</h1>
-    <p>התחברו או הירשמו כדי להמשיך.</p>
-    <a href="{{ url_for('login') }}">התחבר</a> | <a href="{{ url_for('register') }}">הרשמה</a>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <h1>ברוכים הבאים</h1>
+
+  {% if current_user.is_authenticated %}
+    <p>שלום {{ current_user.email }}.</p>
+    <p><a href="{{ url_for('dashboard') }}">לעמוד החיפוש</a></p>
+  {% else %}
+    <p>כדי להמשיך, התחבר/י:</p>
+    <p><a href="{{ url_for('login') }}">התחברות</a></p>
+  {% endif %}
+{% endblock %}
