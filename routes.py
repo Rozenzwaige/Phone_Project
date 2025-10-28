@@ -3,6 +3,7 @@ from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 from bq import search_contacts
+from bq import search_contacts, log_search_event
 
 from app import app
 import config
