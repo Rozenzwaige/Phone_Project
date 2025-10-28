@@ -8,15 +8,18 @@ import config
 from models import EnvUser
 
 
+# === דף הבית (מוגן) ===
 @app.route("/")
+@login_required
 def home():
-    # אם מחובר/ת – לדשבורד; אחרת למסך התחברות
-    return redirect(url_for("dashboard") if current_user.is_authenticated else url_for("login"))
+    return render_template("home.html", email=current_user.email)
 
 
+# === לוגין ===
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    next_url = request.args.get("next") or url_for("dashboard")
+    # אחרי לוגין מפנים ל-home כברירת מחדל
+    next_url = request.args.get("next") or url_for("home")
 
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
@@ -28,9 +31,9 @@ def login():
             return render_template("login.html", next_url=next_url), 401
 
         ok = False
-        if rec.get("hash"):         # מצב מאובטח (hash)
+        if rec.get("hash"):
             ok = check_password_hash(rec["hash"], password)
-        elif rec.get("password"):   # מצב פשוט (plaintext ב-ENV)
+        elif rec.get("password"):
             ok = (password == rec["password"])
 
         if not ok:
@@ -44,12 +47,14 @@ def login():
     return render_template("login.html", next_url=next_url)
 
 
+# === תאימות לאחור: /dashboard מפנה ל-Home ===
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", email=current_user.email)
+    return redirect(url_for("home"))
 
 
+# === לוגאאוט ===
 @app.route("/logout")
 @login_required
 def logout():
@@ -57,7 +62,7 @@ def logout():
     return redirect(url_for("login"))
 
 
-# אין רישום בגרסת בלי-DB
-@app.route("/register")
+# === אין רישום בגרסת בלי-DB; שומרים endpoint="register" למקרה שיש קישורים ישנים ===
+@app.route("/register", endpoint="register")
 def register_disabled():
     return redirect(url_for("login"))
