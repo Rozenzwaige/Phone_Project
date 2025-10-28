@@ -6,21 +6,23 @@ from google.cloud import bigquery
 _bq_client = None
 
 def get_client() -> bigquery.Client:
+    """מחזיר מופע BigQuery Client שמבוסס על GOOGLE_APPLICATION_CREDENTIALS."""
     global _bq_client
     if _bq_client is None:
-        _bq_client = bigquery.Client()  # משתמש ב-GOOGLE_APPLICATION_CREDENTIALS
+        _bq_client = bigquery.Client()
     return _bq_client
 
 def _digits_only(s: str) -> str:
     return re.sub(r"\D+", "", s or "")
 
 def _safe_ident(name: str) -> str:
-    """רק אותיות/ספרות/קו תחתי לשמות עמודות; אחרת נזרוק שגיאה ברורה."""
+    """ולידציה לשמות עמודות (מותר רק אותיות/ספרות/קו תחתון)."""
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name or ""):
         raise RuntimeError(f"Illegal column name: {name!r}")
     return name
 
 def _table_fqdn() -> str:
+    """שם טבלה מלא project.dataset.table מתוך ENV."""
     fq = os.getenv("BQ_TABLE_FQ")
     if fq:
         return fq
@@ -31,40 +33,68 @@ def _table_fqdn() -> str:
         raise RuntimeError("Missing table config: set BQ_TABLE_FQ or BQ_PROJECT/BQ_DATASET/BQ_TABLE")
     return f"{project}.{dataset}.{table}"
 
+def _location() -> str | None:
+    """אזור השאילתה (למשל 'US' / 'EU') אם הוגדר BQ_LOCATION, אחרת None."""
+    loc = (os.getenv("BQ_LOCATION") or "").strip()
+    return loc or None
+
 def search_contacts(search_type: str, q: str, limit: int = 100) -> List[Dict]:
     """
-    מחזיר: [{"name":..., "title":..., "phone":...}, ...]
+    חיפוש:
+      - name/title: מפרק למילים ודורש AND בין כולן בשדה הרלוונטי.
+      - free: AND על כל המילים בטקסט (name/title) + אופציה לחיפוש ספרות בטלפון (OR).
+    מחזיר רשימה של dict-ים: [{"name":..., "title":..., "phone":...}, ...]
     """
     q = (q or "").strip()
     if not q:
         return []
 
-    table_fq = _table_fqdn()
-
-    # שמות עמודות ניתנים לשינוי דרך ENV
+    table_fq  = _table_fqdn()
     name_col  = _safe_ident(os.getenv("BQ_COL_NAME",  "name"))
     title_col = _safe_ident(os.getenv("BQ_COL_TITLE", "title"))
     phone_col = _safe_ident(os.getenv("BQ_COL_PHONE", "phone"))
 
-    q_lower  = q.lower()
-    q_digits = _digits_only(q)
+    q_lower   = q.lower()
+    words     = [w for w in q_lower.split() if w]
+    digits    = _digits_only(q)
+    params    = [bigquery.ScalarQueryParameter("lim", "INT64", limit)]
 
-    params = [
-        bigquery.ScalarQueryParameter("q",  "STRING", q_lower),
-        bigquery.ScalarQueryParameter("qd", "STRING", q_digits),
-        bigquery.ScalarQueryParameter("lim","INT64",  limit),
-    ]
-
+    # === WHERE לפי סוג חיפוש ===
     if search_type == "name":
-        where = f"LOWER(`{name_col}`) LIKE CONCAT('%', @q, '%')"
+        clauses = []
+        for i, w in enumerate(words) if words else [(0, q_lower)]:
+            params.append(bigquery.ScalarQueryParameter(f"w{i}", "STRING", f"%{w}%"))
+            clauses.append(f"LOWER(`{name_col}`) LIKE @w{i}")
+        where = " AND ".join(clauses)
+
     elif search_type == "title":
-        where = f"LOWER(`{title_col}`) LIKE CONCAT('%', @q, '%')"
+        clauses = []
+        for i, w in enumerate(words) if words else [(0, q_lower)]:
+            params.append(bigquery.ScalarQueryParameter(f"w{i}", "STRING", f"%{w}%"))
+            clauses.append(f"LOWER(`{title_col}`) LIKE @w{i}")
+        where = " AND ".join(clauses)
+
     else:
-        where = (
-            f"LOWER(`{name_col}`) LIKE CONCAT('%', @q, '%') OR "
-            f"LOWER(`{title_col}`) LIKE CONCAT('%', @q, '%') OR "
-            f"REGEXP_REPLACE(CAST(`{phone_col}` AS STRING), r'\\D', '') LIKE CONCAT('%', @qd, '%')"
-        )
+        # חיפוש חופשי: AND על כל המילים בטקסט (name/title)
+        text_clauses = []
+        for i, w in enumerate(words) if words else [(0, q_lower)]:
+            params.append(bigquery.ScalarQueryParameter(f"w{i}", "STRING", f"%{w}%"))
+            text_clauses.append(
+                f"(LOWER(`{name_col}`) LIKE @w{i} OR LOWER(`{title_col}`) LIKE @w{i})"
+            )
+        text_cond = " AND ".join(text_clauses) if text_clauses else "TRUE"
+
+        phone_cond = None
+        if len(digits) >= 4:
+            params.append(bigquery.ScalarQueryParameter("ph", "STRING", f"%{digits}%"))
+            phone_cond = (
+                f"REGEXP_REPLACE(CAST(`{phone_col}` AS STRING), r'\\D', '') LIKE @ph"
+            )
+
+        # התאמה בטקסט או בטלפון:
+        where = f"(({text_cond}) OR ({phone_cond}))" if phone_cond else text_cond
+        # אם תרצה שגם טלפון יהיה חובה, החלף ל:
+        # where = f"(({text_cond}) AND ({phone_cond}))"
 
     sql = f"""
       SELECT
@@ -77,10 +107,11 @@ def search_contacts(search_type: str, q: str, limit: int = 100) -> List[Dict]:
       LIMIT @lim
     """
 
-    job  = get_client().query(sql, job_config=bigquery.QueryJobConfig(query_parameters=params))
+    job  = get_client().query(
+        sql,
+        job_config=bigquery.QueryJobConfig(query_parameters=params),
+        location=_location(),  # אם הוגדר BQ_LOCATION
+    )
     rows = job.result()
 
-    out: List[Dict] = []
-    for r in rows:
-        out.append({"name": r.get("name"), "title": r.get("title"), "phone": r.get("phone")})
-    return out
+    return [{"name": r.get("name"), "title": r.get("title"), "phone": r.get("phone")} for r in rows]
