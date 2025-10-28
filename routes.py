@@ -8,17 +8,16 @@ import config
 from models import EnvUser
 
 
-# === דף הבית (מוגן) ===
+# === דף הבית (מוגן): מציג את index.html שלך ===
 @app.route("/")
 @login_required
 def home():
-    return render_template("home.html", email=current_user.email)
+    return render_template("index.html", email=current_user.email)
 
 
-# === לוגין ===
+# === לוגין לפי USERS_JSON (ENV) ===
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # אחרי לוגין מפנים ל-home כברירת מחדל
     next_url = request.args.get("next") or url_for("home")
 
     if request.method == "POST":
@@ -31,9 +30,9 @@ def login():
             return render_template("login.html", next_url=next_url), 401
 
         ok = False
-        if rec.get("hash"):
+        if rec.get("hash"):         # מצב מאובטח (hash)
             ok = check_password_hash(rec["hash"], password)
-        elif rec.get("password"):
+        elif rec.get("password"):   # מצב פשוט (plaintext ב-ENV)
             ok = (password == rec["password"])
 
         if not ok:
@@ -47,7 +46,34 @@ def login():
     return render_template("login.html", next_url=next_url)
 
 
-# === תאימות לאחור: /dashboard מפנה ל-Home ===
+# === עמוד החיפוש (מוגן): מקבל את הטופס מ-index.html ומציג תוצאות ב-search.html ===
+@app.route("/search", methods=["GET"])
+@login_required
+def search():
+    search_type = request.args.get("search_type", "free")
+    query = (request.args.get("query") or "").strip()
+
+    rows = None  # לא מציגים טבלה עד שיש חיפוש
+    if query:
+        # === TODO: כאן לחבר את קריאת ה-BigQuery האמיתית שלך ולהחזיר rows בפורמט של list[dict] ===
+        # דוגמה זמנית כדי שתראה שזה עובד (מחק כשתחבר נתונים אמיתיים):
+        rows = [
+            {"name": "דוגמה דוגמאי", "title": "כתב/ת", "phone": "050-1234567"},
+        ]
+
+        # לדוגמה אמיתית:
+        # rows = query_bigquery(search_type=search_type, query=query)
+        # צפוי להחזיר משהו כמו:
+        # [{"name": "...", "title": "...", "phone": "..."}, ...]
+
+    return render_template("search.html",
+                           email=current_user.email,
+                           search_type=search_type,
+                           query=query,
+                           rows=rows)
+
+
+# === תאימות לאחור: /dashboard מפנה לעמוד הבית ===
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -62,7 +88,7 @@ def logout():
     return redirect(url_for("login"))
 
 
-# === אין רישום בגרסת בלי-DB; שומרים endpoint="register" למקרה שיש קישורים ישנים ===
+# === אין רישום; משאירים endpoint="register" כדי שקישורים ישנים לא יפלו ===
 @app.route("/register", endpoint="register")
 def register_disabled():
     return redirect(url_for("login"))
