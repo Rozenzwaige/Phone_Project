@@ -2,6 +2,7 @@
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
+from bq import search_contacts
 
 from app import app
 import config
@@ -53,26 +54,18 @@ def search():
     search_type = request.args.get("search_type", "free")
     query = (request.args.get("query") or "").strip()
 
-    rows = None  # לא מציגים טבלה עד שיש חיפוש
+    rows = None
     if query:
-        # === TODO: כאן לחבר את קריאת ה-BigQuery האמיתית שלך ולהחזיר rows בפורמט של list[dict] ===
-        # דוגמה זמנית כדי שתראה שזה עובד (מחק כשתחבר נתונים אמיתיים):
-        rows = [
-            {"name": "דוגמה דוגמאי", "title": "כתב/ת", "phone": "050-1234567"},
-        ]
+        # כאן מגיעות תוצאות אמיתיות מביגקווירי
+        rows = search_contacts(search_type=search_type, q=query, limit=100)
 
-        # לדוגמה אמיתית:
-        # rows = query_bigquery(search_type=search_type, query=query)
-        # צפוי להחזיר משהו כמו:
-        # [{"name": "...", "title": "...", "phone": "..."}, ...]
-
-    return render_template("search.html",
-                           email=current_user.email,
-                           search_type=search_type,
-                           query=query,
-                           rows=rows)
-
-
+    return render_template(
+        "search.html",
+        email=current_user.email,
+        search_type=search_type,
+        query=query,
+        rows=rows,
+    )
 # === תאימות לאחור: /dashboard מפנה לעמוד הבית ===
 @app.route("/dashboard")
 @login_required
