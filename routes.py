@@ -1,10 +1,10 @@
 # routes.py
+# routes.py — imports מומלצים
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
-from bq import search_contacts
-from bq import search_contacts, log_search_event
 
+from bq import search_contacts, log_search_event  # שים פעם אחת בלבד
 from app import app
 import config
 from models import EnvUser
@@ -56,15 +56,30 @@ def search():
     search_type = request.args.get("search_type", "free")
     query = (request.args.get("query") or "").strip()
 
-    rows = None
+    rows = []
     if query:
+        # חיפוש בפועל
         try:
             rows = search_contacts(search_type=search_type, q=query, limit=100)
         except Exception as e:
-            # נרשום ללוג ונציג הודעה ידידותית
             app.logger.exception("BigQuery search failed")
             flash(f"שגיאת חיפוש: {e}", "danger")
             rows = []
+
+        # רישום לוג (לא מפיל את הדף אם נכשל)
+        try:
+            ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+            ua = request.headers.get("User-Agent")
+            log_search_event(
+                user_email=current_user.email,
+                query=query,
+                search_type=search_type,
+                num_results=len(rows),
+                ip=ip,
+                user_agent=ua,
+            )
+        except Exception as e:
+            app.logger.warning(f"search log failed: {e}")
 
     return render_template(
         "search.html",
