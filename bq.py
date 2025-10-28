@@ -3,17 +3,22 @@ import os, re
 from typing import List, Dict
 from google.cloud import bigquery
 
-_bq_client = None  # <- שם משתנה אחר
+_bq_client = None
 
 def get_client() -> bigquery.Client:
     global _bq_client
     if _bq_client is None:
-        _bq_client = bigquery.Client()  # דורש GOOGLE_APPLICATION_CREDENTIALS תקין
+        _bq_client = bigquery.Client()  # משתמש ב-GOOGLE_APPLICATION_CREDENTIALS
     return _bq_client
 
 def _digits_only(s: str) -> str:
-    import re
     return re.sub(r"\D+", "", s or "")
+
+def _safe_ident(name: str) -> str:
+    """רק אותיות/ספרות/קו תחתי לשמות עמודות; אחרת נזרוק שגיאה ברורה."""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name or ""):
+        raise RuntimeError(f"Illegal column name: {name!r}")
+    return name
 
 def _table_fqdn() -> str:
     fq = os.getenv("BQ_TABLE_FQ")
@@ -27,11 +32,20 @@ def _table_fqdn() -> str:
     return f"{project}.{dataset}.{table}"
 
 def search_contacts(search_type: str, q: str, limit: int = 100) -> List[Dict]:
+    """
+    מחזיר: [{"name":..., "title":..., "phone":...}, ...]
+    """
     q = (q or "").strip()
     if not q:
         return []
 
-    table    = _table_fqdn()
+    table_fq = _table_fqdn()
+
+    # שמות עמודות ניתנים לשינוי דרך ENV
+    name_col  = _safe_ident(os.getenv("BQ_COL_NAME",  "name"))
+    title_col = _safe_ident(os.getenv("BQ_COL_TITLE", "title"))
+    phone_col = _safe_ident(os.getenv("BQ_COL_PHONE", "phone"))
+
     q_lower  = q.lower()
     q_digits = _digits_only(q)
 
@@ -42,22 +56,22 @@ def search_contacts(search_type: str, q: str, limit: int = 100) -> List[Dict]:
     ]
 
     if search_type == "name":
-        where = "LOWER(name) LIKE CONCAT('%', @q, '%')"
+        where = f"LOWER(`{name_col}`) LIKE CONCAT('%', @q, '%')"
     elif search_type == "title":
-        where = "LOWER(title) LIKE CONCAT('%', @q, '%')"
+        where = f"LOWER(`{title_col}`) LIKE CONCAT('%', @q, '%')"
     else:
-        where = """
-          (LOWER(name)  LIKE CONCAT('%', @q, '%')
-           OR LOWER(title) LIKE CONCAT('%', @q, '%')
-           OR REGEXP_REPLACE(CAST(phone AS STRING), r'\\D', '') LIKE CONCAT('%', @qd, '%'))
-        """
+        where = (
+            f"LOWER(`{name_col}`) LIKE CONCAT('%', @q, '%') OR "
+            f"LOWER(`{title_col}`) LIKE CONCAT('%', @q, '%') OR "
+            f"REGEXP_REPLACE(CAST(`{phone_col}` AS STRING), r'\\D', '') LIKE CONCAT('%', @qd, '%')"
+        )
 
     sql = f"""
       SELECT
-        name,
-        title,
-        CAST(phone AS STRING) AS phone
-      FROM `{table}`
+        `{name_col}`  AS name,
+        `{title_col}` AS title,
+        CAST(`{phone_col}` AS STRING) AS phone
+      FROM `{table_fq}`
       WHERE {where}
       ORDER BY name
       LIMIT @lim
@@ -66,7 +80,7 @@ def search_contacts(search_type: str, q: str, limit: int = 100) -> List[Dict]:
     job  = get_client().query(sql, job_config=bigquery.QueryJobConfig(query_parameters=params))
     rows = job.result()
 
-    out = []
+    out: List[Dict] = []
     for r in rows:
         out.append({"name": r.get("name"), "title": r.get("title"), "phone": r.get("phone")})
     return out
