@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}חיפוש{% endblock %}
+
+{% block content %}
+  <style>
+    body { text-align: center; font-family: Arial, sans-serif; direction: rtl; background-color: #fff; }
+    .container { max-width: 650px;  margin: auto; padding: 20px; }
+    .search-box { width: 100%; background: #f0f0f0; padding: 10px; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+    select, input, button { font-size: 16px; border: none; outline: none; background: none; }
+    input[type="text"] { width: 100%; padding: 10px; background: white; border-radius: 8px; }
+    button { cursor: pointer; padding: 10px 15px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; text-align: right; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px; }
+    th { background: #fafafa; }
+  </style>
+
+  <h1>חיפוש במאגר אנשי קשר</h1>
+
+  <div class="container">
+    <form action="{{ url_for('search') }}" method="GET" class="search-box">
+      <select name="search_type">
+        <option value="free"  {{ 'selected' if search_type=='free'  else '' }}>חיפוש חופשי</option>
+        <option value="name"  {{ 'selected' if search_type=='name'  else '' }}>שם</option>
+        <option value="title" {{ 'selected' if search_type=='title' else '' }}>טייטל</option>
+      </select>
+      <input type="text" name="query" value="{{ query or '' }}" placeholder="מה תרצה לחפש?">
+      <button type="submit">חפש</button>
+    </form>
+
+    {% if rows is defined %}
+      <div style="text-align:right; margin-top:10px;">
+        {% if query %}
+          <small>תוצאות עבור: <strong>{{ query }}</strong></small>
+        {% endif %}
+      </div>
+
+      {% if rows %}
+        <table>
+          <thead>
+            <tr>
+              <th>שם</th>
+              <th>טייטל</th>
+              <th>טלפון</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td>{{ r.name or r.get('name') }}</td>
+                <td>{{ r.title or r.get('title') }}</td>
+                <td>{{ r.phone or r.get('phone') }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p style="margin-top:16px;">לא נמצאו תוצאות.</p>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}
