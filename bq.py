@@ -118,18 +118,18 @@ def search_contacts(search_type: str, q: str, limit: int = 100) -> List[Dict]:
 # bq.py (למטה בקובץ)
 import datetime as _dt
 
+# למעלה כבר יש: import datetime as _dt
+
 def log_search_event(user_email: str, query: str, search_type: str, num_results: int,
                      ip: str | None = None, user_agent: str | None = None) -> bool:
-    """
-    רושם אירוע חיפוש בטבלת BigQuery.
-    מחזיר True אם הצליח או אם BQ_LOG_TABLE_FQ לא מוגדר (דלג בשקט).
-    """
     table = os.getenv("BQ_LOG_TABLE_FQ")
     if not table:
-        return True  # אין טבלת לוגים מוגדרת → לא נכשלים
+        return True
 
     row = {
-        "ts": _dt.datetime.utcnow(),   # UTC timestamp
+        # היה: _dt.datetime.utcnow(),
+        # שיהיה מחרוזת RFC3339 שה-BQ אוהב:
+        "ts": _dt.datetime.now(_dt.timezone.utc).isoformat(),  # למשל "2025-10-28T20:17:31+00:00"
         "user_email": user_email or None,
         "query": query or "",
         "search_type": search_type or "",
@@ -141,3 +141,4 @@ def log_search_event(user_email: str, query: str, search_type: str, num_results:
     client = get_client()
     errors = client.insert_rows_json(table, [row])
     return not bool(errors)
+
