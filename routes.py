@@ -48,6 +48,7 @@ def login():
 
 
 # === עמוד החיפוש (מוגן): מקבל את הטופס מ-index.html ומציג תוצאות ב-search.html ===
+
 @app.route("/search", methods=["GET"])
 @login_required
 def search():
@@ -56,8 +57,13 @@ def search():
 
     rows = None
     if query:
-        # כאן מגיעות תוצאות אמיתיות מביגקווירי
-        rows = search_contacts(search_type=search_type, q=query, limit=100)
+        try:
+            rows = search_contacts(search_type=search_type, q=query, limit=100)
+        except Exception as e:
+            # נרשום ללוג ונציג הודעה ידידותית
+            app.logger.exception("BigQuery search failed")
+            flash(f"שגיאת חיפוש: {e}", "danger")
+            rows = []
 
     return render_template(
         "search.html",
