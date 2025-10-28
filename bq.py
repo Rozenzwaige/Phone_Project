@@ -115,3 +115,29 @@ def search_contacts(search_type: str, q: str, limit: int = 100) -> List[Dict]:
     rows = job.result()
 
     return [{"name": r.get("name"), "title": r.get("title"), "phone": r.get("phone")} for r in rows]
+# bq.py (למטה בקובץ)
+import datetime as _dt
+
+def log_search_event(user_email: str, query: str, search_type: str, num_results: int,
+                     ip: str | None = None, user_agent: str | None = None) -> bool:
+    """
+    רושם אירוע חיפוש בטבלת BigQuery.
+    מחזיר True אם הצליח או אם BQ_LOG_TABLE_FQ לא מוגדר (דלג בשקט).
+    """
+    table = os.getenv("BQ_LOG_TABLE_FQ")
+    if not table:
+        return True  # אין טבלת לוגים מוגדרת → לא נכשלים
+
+    row = {
+        "ts": _dt.datetime.utcnow(),   # UTC timestamp
+        "user_email": user_email or None,
+        "query": query or "",
+        "search_type": search_type or "",
+        "num_results": int(num_results or 0),
+        "ip": ip or None,
+        "user_agent": user_agent or None,
+    }
+
+    client = get_client()
+    errors = client.insert_rows_json(table, [row])
+    return not bool(errors)
