@@ -91,3 +91,17 @@ def logout():
 @app.route("/register", endpoint="register")
 def register_disabled():
     return redirect(url_for("login"))
+
+@app.route("/__whoami__")
+def whoami():
+    import os, json
+    with open(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"), "r") as f:
+        sa = json.load(f)
+    return {"client_email": sa.get("client_email")}
+@app.route("/__bqcfg__")
+def bqcfg():
+    import os
+    return {
+        "BQ_TABLE_FQ": os.getenv("BQ_TABLE_FQ"),
+        "BQ_LOCATION": os.getenv("BQ_LOCATION"),
+    }
