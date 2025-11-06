@@ -44,14 +44,15 @@
             </tr>
           </thead>
           <tbody>
-            {% for r in rows %}
-              <tr>
-                <td>{{ r.name or r.get('name') }}</td>
-                <td>{{ r.title or r.get('title') }}</td>
-                <td>{{ r.phone or r.get('phone') }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
+              {% for r in rows %}
+             <tr>
+              <td>{{ r.name or r.get('name') or '' }}</td>
+              <td>{{ r.title or r.get('title') or '' }}</td>
+              <td>{{ r.phone or r.get('phone') or '' }}</td>
+             </tr>
+           {% endfor %}
+        </tbody>
+
         </table>
       {% else %}
         <p style="margin-top:16px;">לא נמצאו תוצאות.</p>
