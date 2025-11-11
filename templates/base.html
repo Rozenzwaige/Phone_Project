@@ -1,25 +1,32 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <style>
+  style>
   table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;   /* עמודות ברוחב קבוע */
   }
 
   th, td {
     padding: 8px;
     text-align: right;
+    white-space: normal;         /* לאפשר ירידת שורה */
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
   }
 
-  /* לא לשבור שורה בשם ובטלפון */
-  .col-name,
+  /* שם – בערך 25 תווים */
+  .col-name {
+    width: 25ch;
+  }
+
+  /* טלפון – גם בערך 25 תווים (אפשר להקטין אם תרצה) */
   .col-phone {
-    white-space: nowrap;
-    width: 1%;       /* שלא יתפסו הרבה רוחב */
+    width: 25ch;
   }
 
-  /* הטייטל יקבל את שאר הרוחב */
+  /* טייטל – לוקח את כל מה שנשאר באמצע */
   .col-title {
     width: auto;
   }
