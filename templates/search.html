@@ -36,24 +36,23 @@
 
       {% if rows %}
         <table>
-          <thead>
-            <tr>
-              <th>שם</th>
-              <th>טייטל</th>
-              <th>טלפון</th>
-            </tr>
-          </thead>
-          <tbody>
-              {% for r in rows %}
-             <tr>
-              <td>{{ r.name or r.get('name') or '' }}</td>
-              <td>{{ r.title or r.get('title') or '' }}</td>
-              <td>{{ r.phone or r.get('phone') or '' }}</td>
-             </tr>
-           {% endfor %}
-        </tbody>
-
-        </table>
+  <thead>
+    <tr>
+      <th class="col-name">שם</th>
+      <th class="col-title">טייטל</th>
+      <th class="col-phone">טלפון</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="col-name">{{ r.name or r.get('name') or '' }}</td>
+        <td class="col-title">{{ r.title or r.get('title') or '' }}</td>
+        <td class="col-phone">{{ r.phone or r.get('phone') or '' }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
       {% else %}
         <p style="margin-top:16px;">לא נמצאו תוצאות.</p>
       {% endif %}
