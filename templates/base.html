@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+  <style>
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 8px;
+    text-align: right;
+  }
+
+  /* לא לשבור שורה בשם ובטלפון */
+  .col-name,
+  .col-phone {
+    white-space: nowrap;
+    width: 1%;       /* שלא יתפסו הרבה רוחב */
+  }
+
+  /* הטייטל יקבל את שאר הרוחב */
+  .col-title {
+    width: auto;
+  }
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}My App{% endblock %}</title>
