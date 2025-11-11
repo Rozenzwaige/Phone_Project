@@ -1,40 +1,42 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;   /* עמודות ברוחב קבוע */
-  }
-
-  th, td {
-    padding: 8px;
-    text-align: right;
-    white-space: normal;         /* לאפשר ירידת שורה */
-    word-wrap: break-word;
-    overflow-wrap: anywhere;
-  }
-
-  /* שם – בערך 25 תווים */
-  .col-name {
-    width: 25ch;
-  }
-
-  /* טלפון – גם בערך 25 תווים (אפשר להקטין אם תרצה) */
-  .col-phone {
-    width: 25ch;
-  }
-
-  /* טייטל – לוקח את כל מה שנשאר באמצע */
-  .col-title {
-    width: auto;
-  }
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}My App{% endblock %}</title>
+
   <style>
+    /* טבלה – עמודות ברוחב קבוע */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: right;
+      white-space: normal;      /* לאפשר ירידת שורה */
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    /* שם – בערך 25 תווים */
+    .col-name {
+      width: 25ch;
+    }
+
+    /* טלפון – גם בערך 25 תווים */
+    .col-phone {
+      width: 25ch;
+    }
+
+    /* טייטל – לוקח את כל מה שנשאר באמצע */
+    .col-title {
+      width: auto;
+    }
+
+    /* שאר ה־CSS הכללי */
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     nav a { margin-inline: .5rem; }
     .danger { color: #b00020; }
