@@ -20,6 +20,14 @@
       word-wrap: break-word;
       overflow-wrap: anywhere;
     }
+/* החלק העליון של מסך החיפוש – נשאר צמוד למעלה בזמן גלילה */
+.search-header {
+  position: sticky;
+  top: 0;                 /* צמוד ממש לחלק העליון של הדף */
+  background: #ffffff;    /* רקע לבן כדי לא לכסות טקסט מתחת */
+  padding-bottom: 1rem;
+  z-index: 10;            /* שיישב מעל הטבלה */
+}
 
     /* שם – בערך 15 תווים */
     .col-name {
