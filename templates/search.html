@@ -3,59 +3,133 @@
 
 {% block content %}
   <style>
-    body { text-align: center; font-family: Arial, sans-serif; direction: rtl; background-color: #fff; }
-    .container { max-width: 650px;  margin: auto; padding: 20px; }
-    .search-box { width: 100%; background: #f0f0f0; padding: 10px; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-    select, input, button { font-size: 16px; border: none; outline: none; background: none; }
-    input[type="text"] { width: 100%; padding: 10px; background: white; border-radius: 8px; }
-    button { cursor: pointer; padding: 10px 15px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 16px; text-align: right; }
-    th, td { border-bottom: 1px solid #eee; padding: 8px; }
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      direction: rtl;
+      background-color: #fff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 0 20px 20px;
+      text-align: right;
+    }
+
+    /* הראש הדביק של המסך (כותרת + טופס חיפוש + תוצאות עבור…) */
+    .search-header {
+      position: sticky;
+      top: 0;                 /* אם עשית גם nav דביק עם גובה, תן כאן offset מתאים */
+      background: #ffffff;
+      z-index: 10;
+      padding: 10px 0 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .search-box {
+      width: 100%;
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select, input, button {
+      font-size: 16px;
+      border: none;
+      outline: none;
+      background: none;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 10px 15px;
+      background: #e8e8e8;
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      text-align: right;
+      table-layout: fixed;            /* עמודות ברוחב קבוע */
+    }
+
+    th, td {
+      border-bottom: 1px solid #eee;
+      padding: 8px;
+      white-space: normal;            /* לאפשר ירידת שורה */
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      vertical-align: top;
+    }
+
     th { background: #fafafa; }
+
+    /* שם ~ 25 תווים, טלפון ~ 25 תווים, טייטל מה שנשאר */
+    .col-name  { width: 15ch; }
+    .col-phone { width: 15ch; }
+    .col-title { width: auto; }
   </style>
 
-  <h1>חיפוש במאגר אנשי קשר</h1>
-
   <div class="container">
-    <form action="{{ url_for('search') }}" method="GET" class="search-box">
-      <select name="search_type">
-        <option value="free"  {{ 'selected' if search_type=='free'  else '' }}>חיפוש חופשי</option>
-        <option value="name"  {{ 'selected' if search_type=='name'  else '' }}>שם</option>
-        <option value="title" {{ 'selected' if search_type=='title' else '' }}>טייטל</option>
-      </select>
-      <input type="text" name="query" value="{{ query or '' }}" placeholder="מה תרצה לחפש?">
-      <button type="submit">חפש</button>
-    </form>
+
+    <div class="search-header">
+      <h1 style="margin:0 0 12px;">חיפוש במאגר אנשי קשר</h1>
+
+      <form action="{{ url_for('search') }}" method="GET" class="search-box">
+        <select name="search_type">
+          <option value="free"  {{ 'selected' if search_type=='free'  else '' }}>חיפוש חופשי</option>
+          <option value="name"  {{ 'selected' if search_type=='name'  else '' }}>שם</option>
+          <option value="title" {{ 'selected' if search_type=='title' else '' }}>טייטל</option>
+        </select>
+
+        <input type="text" name="query" value="{{ query or '' }}" placeholder="מה תרצה לחפש?">
+        <button type="submit">חפש</button>
+      </form>
+
+      {% if rows is defined and query %}
+        <div style="margin-top:8px;">
+          <small>תוצאות עבור: <strong>{{ query }}</strong></small>
+        </div>
+      {% endif %}
+    </div>
 
     {% if rows is defined %}
-      <div style="text-align:right; margin-top:10px;">
-        {% if query %}
-          <small>תוצאות עבור: <strong>{{ query }}</strong></small>
-        {% endif %}
-      </div>
-
       {% if rows %}
         <table>
-  <thead>
-    <tr>
-      <th class="col-name">שם</th>
-      <th class="col-title">טייטל</th>
-      <th class="col-phone">טלפון</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for r in rows %}
-      <tr>
-        <td class="col-name">{{ r.name or r.get('name') or '' }}</td>
-        <td class="col-title">{{ r.title or r.get('title') or '' }}</td>
-        <td class="col-phone">{{ r.phone or r.get('phone') or '' }}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+          <thead>
+            <tr>
+              <th class="col-name">שם</th>
+              <th class="col-title">טייטל</th>
+              <th class="col-phone">טלפון</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td class="col-name">{{ (r.name or r.get('name') or '') }}</td>
+                <td class="col-title">{{ (r.title or r.get('title') or '') }}</td>
+                <td class="col-phone">{{ (r.phone or r.get('phone') or '') }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       {% else %}
         <p style="margin-top:16px;">לא נמצאו תוצאות.</p>
       {% endif %}
     {% endif %}
+
   </div>
 {% endblock %}
