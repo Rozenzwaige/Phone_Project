@@ -3,81 +3,47 @@
 
 {% block content %}
   <style>
-    body {
-      text-align: center;
-      font-family: Arial, sans-serif;
-      direction: rtl;
-      background-color: #fff;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 0 20px 20px;
-      text-align: right;
-    }
-
-    /* הראש הדביק של המסך (כותרת + טופס חיפוש + תוצאות עבור…) */
-    .search-header {
-      position: sticky;
-      top: 0;                 /* אם עשית גם nav דביק עם גובה, תן כאן offset מתאים */
-      background: #ffffff;
-      z-index: 10;
-      padding: 10px 0 8px;
-      border-bottom: 1px solid #eee;
-    }
+    body { text-align: center; font-family: Arial, sans-serif; direction: rtl; background-color: #fff; }
+    .container { max-width: 900px; margin: auto; padding: 20px; }
 
     .search-box {
-      width: 100%;
-      background: #f0f0f0;
-      padding: 10px;
-      border-radius: 8px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
+      position: sticky; top: 0; z-index: 10;
+      width: 100%; background: #f0f0f0; padding: 12px; border-radius: 8px;
+      display: flex; justify-content: center; align-items: center; gap: 10px;
+      margin-bottom: 10px;
     }
 
-    select, input, button {
-      font-size: 16px;
-      border: none;
-      outline: none;
-      background: none;
-    }
+    select, input, button { font-size: 16px; border: none; outline: none; background: none; }
+    input[type="text"] { width: 100%; padding: 10px; background: white; border-radius: 8px; }
+    button { cursor: pointer; padding: 10px 15px; }
 
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      background: white;
+    /* אזור תוצאות עם גלילה פנימית */
+    .results-scroll {
+      max-height: calc(100vh - 180px);  /* אם צריך, שחק עם המספר כדי שישב טוב על המסך שלך */
+      overflow: auto;
+      border: 1px solid #eee;
       border-radius: 8px;
     }
 
-    button {
-      cursor: pointer;
-      padding: 10px 15px;
-      background: #e8e8e8;
-      border-radius: 8px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-      text-align: right;
-      table-layout: fixed;            /* עמודות ברוחב קבוע */
-    }
-
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     th, td {
-      border-bottom: 1px solid #eee;
       padding: 8px;
-      white-space: normal;            /* לאפשר ירידת שורה */
+      text-align: right;
+      white-space: normal;
       word-wrap: break-word;
       overflow-wrap: anywhere;
-      vertical-align: top;
+      border-bottom: 1px solid #eee;
     }
 
-    th { background: #fafafa; }
+    /* כותרות העמודות – קפואות בזמן גלילה */
+    thead th {
+      position: sticky;
+      top: 0;                 /* נדבקות לראש המכל הגולל */
+      background: #fafafa;
+      z-index: 2;
+    }
 
-    /* שם ~ 25 תווים, טלפון ~ 25 תווים, טייטל מה שנשאר */
+    /* רוחבים קבועים */
     .col-name  { width: 15ch; }
     .col-phone { width: 15ch; }
     .col-title { width: auto; }
@@ -108,24 +74,26 @@
 
     {% if rows is defined %}
       {% if rows %}
-        <table>
-          <thead>
-            <tr>
-              <th class="col-name">שם</th>
-              <th class="col-title">טייטל</th>
-              <th class="col-phone">טלפון</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in rows %}
+        <div class="results-scroll">
+          <table>
+            <thead>
               <tr>
-                <td class="col-name">{{ (r.name or r.get('name') or '') }}</td>
-                <td class="col-title">{{ (r.title or r.get('title') or '') }}</td>
-                <td class="col-phone">{{ (r.phone or r.get('phone') or '') }}</td>
+                <th class="col-name">שם</th>
+                <th class="col-title">טייטל</th>
+                <th class="col-phone">טלפון</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td class="col-name">{{ r.name or r.get('name') or '' }}</td>
+                  <td class="col-title">{{ r.title or r.get('title') or '' }}</td>
+                  <td class="col-phone">{{ r.phone or r.get('phone') or '' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% else %}
         <p style="margin-top:16px;">לא נמצאו תוצאות.</p>
       {% endif %}
